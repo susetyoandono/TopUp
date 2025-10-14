@@ -34,43 +34,47 @@
     let currentTarget = "";
     const scanner = new Html5Qrcode("scanner");
 
-    async function startScan(target) {
-      currentTarget = target;
-      document.getElementById("scanner").innerHTML = "";
+async function startScan(target) {
+  currentTarget = target;
 
-      try {
-        if (scanner._isScanning) {
-          await scanner.stop();
-          await scanner.clear();
-        }
-      } catch (err) {
-        console.warn("Stop/clear error:", err);
-      }
+  // Bersihkan scanner container
+  const scannerDiv = document.getElementById("scanner");
+  scannerDiv.innerHTML = "";
 
-      setTimeout(() => {
-        scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
-            console.log("QR code terbaca:", cleanMessage);
-            document.getElementById(target + "Barcode").value = cleanMessage;
-
-            scanner.stop().then(() => scanner.clear());
-            document.getElementById("scanner").innerHTML = "";
-            document.getElementById("result").innerText = "";
-          },
-          errorMessage => {
-            const input = document.getElementById(target + "Barcode");
-            if (!input.value) {
-              document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
-            }
-          }
-        ).catch(err => {
-          document.getElementById("result").innerText = "Gagal akses kamera: " + err;
-        });
-      }, 500); // delay sedikit lebih lama untuk stabilitas
+  // Stop dan clear scanner jika sedang aktif
+  try {
+    if (scanner._isScanning) {
+      await scanner.stop();
+      await scanner.clear();
     }
+  } catch (err) {
+    console.warn("Stop/clear error:", err);
+  }
+
+  // Delay lebih panjang untuk memastikan kamera siap
+  setTimeout(() => {
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      qrCodeMessage => {
+        const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
+        document.getElementById(target + "Barcode").value = cleanMessage;
+
+        scanner.stop().then(() => scanner.clear());
+        scannerDiv.innerHTML = "";
+        document.getElementById("result").innerText = "";
+      },
+      errorMessage => {
+        const input = document.getElementById(target + "Barcode");
+        if (!input.value) {
+          document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+        }
+      }
+    ).catch(err => {
+      document.getElementById("result").innerText = "Gagal akses kamera: " + err;
+    });
+  }, 700); // delay 700ms untuk stabilitas
+}
 
     function stopScan() {
       scanner.stop().then(() => {
@@ -116,3 +120,4 @@
   </script>
 </body>
 </html>
+
