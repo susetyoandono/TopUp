@@ -53,18 +53,22 @@ async function startScan(target) {
   // Delay 300ms sebelum start ulang
   setTimeout(() => {
     scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        document.getElementById(target + "Barcode").value = qrCodeMessage;
-        scanner.stop().then(() => scanner.clear());
-        document.getElementById("scanner").innerHTML = "";
-      },
-      errorMessage => {
-        console.warn("Scan error:", errorMessage);
-        document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
-      }
-    ).catch(err => {
+  { facingMode: "environment" },
+  { fps: 10, qrbox: 250 },
+  qrCodeMessage => {
+    document.getElementById(target + "Barcode").value = qrCodeMessage;
+    scanner.stop().then(() => scanner.clear());
+    document.getElementById("scanner").innerHTML = "";
+    document.getElementById("result").innerText = ""; // Bersihkan error lama
+  },
+  errorMessage => {
+    console.warn("Scan error:", errorMessage);
+    // Jangan tampilkan error kalau data sudah masuk
+    if (!document.getElementById(target + "Barcode").value) {
+      document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+    }
+  }
+).catch(err => {
       document.getElementById("result").innerText = "Gagal akses kamera: " + err;
     });
   }, 300);
@@ -102,5 +106,6 @@ async function startScan(target) {
   </script>
 </body>
 </html>
+
 
 
