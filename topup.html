@@ -4,10 +4,47 @@
   <title>Top Up Form</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, button { margin: 5px 0; width: 100%; padding: 8px; }
-    #result { font-weight: bold; margin-top: 10px; color: #333; }
-    #scanner { width: 300px; margin-top: 10px; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+    }
+    input, button {
+      margin: 5px 0;
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #scanner {
+      width: 100%;
+      margin-top: 10px;
+    }
+    #waitMessage {
+      font-weight: bold;
+      margin-top: 10px;
+      color: #555;
+      text-align: center;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    #continueBtn {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -27,69 +64,73 @@
   <button onclick="submitForm()">Submit</button>
   <button onclick="stopScan()">Stop Scan</button>
 
+  <div id="waitMessage"></div>
   <div id="result"></div>
+  <button id="continueBtn" onclick="resetForm()">Continue</button>
   <div id="scanner"></div>
 
   <script>
-let currentTarget = "";
-let scannerInstance = null;
+    let currentTarget = "";
+    let scannerInstance = null;
 
-async function startScan(target) {
-  currentTarget = target;
-  const scannerDiv = document.getElementById("scanner");
-  scannerDiv.innerHTML = "";
+    async function startScan(target) {
+      currentTarget = target;
+      const scannerDiv = document.getElementById("scanner");
+      scannerDiv.innerHTML = "";
 
-  // Stop dan clear scanner lama
-  if (scannerInstance) {
-    try {
-      await scannerInstance.stop();
-      await scannerInstance.clear();
-    } catch (err) {
-      console.warn("Stop/clear error:", err);
-    }
-  }
-
-  // Buat instance baru
-  scannerInstance = new Html5Qrcode("scanner");
-
-  setTimeout(() => {
-    scannerInstance.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
-        document.getElementById(target + "Barcode").value = cleanMessage;
-
-        scannerInstance.stop().then(() => scannerInstance.clear());
-        scannerDiv.innerHTML = "";
-        document.getElementById("result").innerText = "";
-      },
-      errorMessage => {
-        const input = document.getElementById(target + "Barcode");
-        if (!input.value) {
-          document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+      if (scannerInstance) {
+        try {
+          await scannerInstance.stop();
+          await scannerInstance.clear();
+        } catch (err) {
+          console.warn("Stop/clear error:", err);
         }
       }
-    ).catch(err => {
-      document.getElementById("result").innerText = "Gagal akses kamera: " + err;
-    });
-  }, 700);
-}
 
-function stopScan() {
-  if (scannerInstance) {
-    scannerInstance.stop().then(() => {
-      document.getElementById("scanner").innerHTML = "";
-    }).catch(err => {
-      console.warn("Gagal stop scanner:", err);
-    });
-  }
-}
+      scannerInstance = new Html5Qrcode("scanner");
+
+      setTimeout(() => {
+        scannerInstance.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          qrCodeMessage => {
+            const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
+            document.getElementById(target + "Barcode").value = cleanMessage;
+
+            scannerInstance.stop().then(() => scannerInstance.clear());
+            scannerDiv.innerHTML = "";
+            document.getElementById("result").innerText = "";
+          },
+          errorMessage => {
+            const input = document.getElementById(target + "Barcode");
+            if (!input.value) {
+              document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+            }
+          }
+        ).catch(err => {
+          document.getElementById("result").innerText = "Gagal akses kamera: " + err;
+        });
+      }, 700);
+    }
+
+    function stopScan() {
+      if (scannerInstance) {
+        scannerInstance.stop().then(() => {
+          document.getElementById("scanner").innerHTML = "";
+        }).catch(err => {
+          console.warn("Gagal stop scanner:", err);
+        });
+      }
+    }
 
     function submitForm() {
       const assy = document.getElementById("assyBarcode").value;
       const topup = document.getElementById("topupBarcode").value;
       const qty = document.getElementById("qty").value;
+
+      document.getElementById("waitMessage").innerText = "Please wait .. system is processing the data";
+      document.getElementById("result").innerText = "";
+      document.getElementById("continueBtn").style.display = "none";
 
       try {
         const assyParts = assy.split(",");
@@ -110,21 +151,37 @@ function stopScan() {
         })
         .then(res => res.text())
         .then(msg => {
-          document.getElementById("result").innerText = "Judgement: " + judgement;
+          showJudgement(judgement);
         })
         .catch(err => {
+          document.getElementById("waitMessage").innerText = "";
           document.getElementById("result").innerText = "Gagal submit: " + err;
         });
 
       } catch (err) {
+        document.getElementById("waitMessage").innerText = "";
         document.getElementById("result").innerText = "Gagal submit: " + err.message;
       }
+    }
+
+    function showJudgement(judgement) {
+      document.getElementById("waitMessage").innerText = "";
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerText = judgement;
+      resultDiv.style.backgroundColor = judgement === "OK" ? "#4CAF50" : "#F44336";
+      resultDiv.style.color = judgement === "OK" ? "#000" : "#FFF";
+      document.getElementById("continueBtn").style.display = "inline-block";
+    }
+
+    function resetForm() {
+      document.getElementById("assyBarcode").value = "";
+      document.getElementById("topupBarcode").value = "";
+      document.getElementById("qty").value = "";
+      document.getElementById("result").innerText = "";
+      document.getElementById("result").style.backgroundColor = "";
+      document.getElementById("waitMessage").innerText = "";
+      document.getElementById("continueBtn").style.display = "none";
     }
   </script>
 </body>
 </html>
-
-
-
-
-
