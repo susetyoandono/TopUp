@@ -34,35 +34,40 @@
     let currentTarget = "";
     const scanner = new Html5Qrcode("scanner");
 
-    async function startScan(target) {
-      currentTarget = target;
+async function startScan(target) {
+  currentTarget = target;
 
-      // Stop scanner if already running
-      try {
-        await scanner.stop();
-        document.getElementById("scanner").innerHTML = "";
-      } catch (err) {
-        console.warn("Scanner not active, continue...");
-      }
+  // Bersihkan scanner container
+  document.getElementById("scanner").innerHTML = "";
 
-      // Start scanner
-      try {
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            document.getElementById(target + "Barcode").value = qrCodeMessage;
-            scanner.stop();
-            document.getElementById("scanner").innerHTML = "";
-          },
-          errorMessage => {
-            console.warn("Scan error:", errorMessage);
-          }
-        );
-      } catch (err) {
-        document.getElementById("result").innerText = "Gagal akses kamera: " + err;
-      }
+  // Coba stop scanner dulu
+  try {
+    if (scanner._isScanning) {
+      await scanner.stop();
     }
+  } catch (err) {
+    console.warn("Stop error (bisa diabaikan):", err);
+  }
+
+  // Delay 300ms sebelum start ulang
+  setTimeout(() => {
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      qrCodeMessage => {
+        document.getElementById(target + "Barcode").value = qrCodeMessage;
+        scanner.stop();
+        document.getElementById("scanner").innerHTML = "";
+      },
+      errorMessage => {
+        console.warn("Scan error:", errorMessage);
+        document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+      }
+    ).catch(err => {
+      document.getElementById("result").innerText = "Gagal akses kamera: " + err;
+    });
+  }, 300);
+}
 
     function stopScan() {
       scanner.stop().then(() => {
@@ -96,3 +101,4 @@
   </script>
 </body>
 </html>
+
