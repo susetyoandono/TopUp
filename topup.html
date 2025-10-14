@@ -102,7 +102,7 @@ function stopScan() {
         const judgement = (assyParts[1] === topupParts[1]) &&
                           (assyParts[19] === topupParts[19]) ? "OK" : "NG";
 
-        fetch("https://script.google.com/macros/s/AKfycbw4LTv9X2h82R6zMgmovD86CtZK2BlEvIropbqSgf0otjd3XRyeTs7xiAhp7mUu5JJd/exec", {
+        fetch("https://script.google.com/macros/s/AKfycbwJ0JQU_ynwVf4wuyCDItz69iWRVfgD8GP4AOKp25x4EbfjBpbngogaX_BZ3J9SnV4n/exec", {
           method: "POST",
           body: JSON.stringify({ assy, topup, qty, judgement }),
           headers: { "Content-Type": "application/json" }
@@ -122,6 +122,7 @@ function stopScan() {
   </script>
 </body>
 </html>
+
 
 
 
