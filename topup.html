@@ -45,33 +45,58 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    #scanSection {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <h2>TOP UP SCAN FORM</h2>
+  <!-- Frontpage -->
+  <div id="frontPage">
+    <h2>Masukkan Operator ID</h2>
+    <input type="text" id="operatorId" placeholder="Enter your ID">
+    <button onclick="goToScan()">→ Continue</button>
+  </div>
 
-  <label>Scan Assy Barcode:</label>
-  <input type="text" id="assyBarcode" readonly>
-  <button onclick="startScan('assy')">Scan Assy</button>
+  <!-- Scan Section -->
+  <div id="scanSection">
+    <h2>TOP UP SCAN FORM</h2>
 
-  <label>Scan Top Up Barcode:</label>
-  <input type="text" id="topupBarcode" readonly>
-  <button onclick="startScan('topup')">Scan Top Up</button>
+    <label>Scan Assy Barcode:</label>
+    <input type="text" id="assyBarcode" readonly>
+    <button onclick="startScan('assy')">Scan Assy</button>
 
-  <label>Top Up Qty:</label>
-  <input type="number" id="qty">
+    <label>Scan Top Up Barcode:</label>
+    <input type="text" id="topupBarcode" readonly>
+    <button onclick="startScan('topup')">Scan Top Up</button>
 
-  <button onclick="submitForm()">Submit</button>
-  <button onclick="stopScan()">Stop Scan</button>
+    <label>Top Up Qty:</label>
+    <input type="number" id="qty">
 
-  <div id="waitMessage"></div>
-  <div id="result"></div>
-  <button id="continueBtn" onclick="resetForm()">Continue</button>
-  <div id="scanner"></div>
+    <button onclick="submitForm()">Submit</button>
+    <button onclick="stopScan()">Stop Scan</button>
+
+    <div id="waitMessage"></div>
+    <div id="result"></div>
+    <button id="continueBtn" onclick="resetForm()">Continue</button>
+    <div id="scanner"></div>
+  </div>
 
   <script>
     let currentTarget = "";
     let scannerInstance = null;
+    let operatorIdGlobal = "";
+
+    function goToScan() {
+      const id = document.getElementById("operatorId").value.trim();
+      if (!id) {
+        alert("Masukkan Operator ID terlebih dahulu.");
+        return;
+      }
+      operatorIdGlobal = id;
+      document.getElementById("frontPage").style.display = "none";
+      document.getElementById("scanSection").style.display = "block";
+    }
 
     async function startScan(target) {
       currentTarget = target;
@@ -146,7 +171,7 @@
         fetch("https://script.google.com/macros/s/AKfycbwJ0JQU_ynwVf4wuyCDItz69iWRVfgD8GP4AOKp25x4EbfjBpbngogaX_BZ3J9SnV4n/exec", {
           method: "POST",
           mode: "no-cors",
-          body: JSON.stringify({ assy, topup, qty, judgement }),
+          body: JSON.stringify({ assy, topup, qty, judgement, operatorId: operatorIdGlobal }),
           headers: { "Content-Type": "application/json" }
         })
         .then(res => res.text())
