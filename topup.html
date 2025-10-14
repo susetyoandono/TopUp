@@ -104,6 +104,7 @@ function stopScan() {
 
         fetch("https://script.google.com/macros/s/AKfycbwJ0JQU_ynwVf4wuyCDItz69iWRVfgD8GP4AOKp25x4EbfjBpbngogaX_BZ3J9SnV4n/exec", {
           method: "POST",
+          mode: "no-cors",
           body: JSON.stringify({ assy, topup, qty, judgement }),
           headers: { "Content-Type": "application/json" }
         })
@@ -122,6 +123,7 @@ function stopScan() {
   </script>
 </body>
 </html>
+
 
 
 
