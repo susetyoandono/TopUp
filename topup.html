@@ -31,36 +31,36 @@
   <div id="scanner"></div>
 
   <script>
-    let currentTarget = "";
-    const scanner = new Html5Qrcode("scanner");
+let currentTarget = "";
+let scannerInstance = null;
 
 async function startScan(target) {
   currentTarget = target;
-
-  // Bersihkan scanner container
   const scannerDiv = document.getElementById("scanner");
   scannerDiv.innerHTML = "";
 
-  // Stop dan clear scanner jika sedang aktif
-  try {
-    if (scanner._isScanning) {
-      await scanner.stop();
-      await scanner.clear();
+  // Stop dan clear scanner lama
+  if (scannerInstance) {
+    try {
+      await scannerInstance.stop();
+      await scannerInstance.clear();
+    } catch (err) {
+      console.warn("Stop/clear error:", err);
     }
-  } catch (err) {
-    console.warn("Stop/clear error:", err);
   }
 
-  // Delay lebih panjang untuk memastikan kamera siap
+  // Buat instance baru
+  scannerInstance = new Html5Qrcode("scanner");
+
   setTimeout(() => {
-    scanner.start(
+    scannerInstance.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
       qrCodeMessage => {
         const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
         document.getElementById(target + "Barcode").value = cleanMessage;
 
-        scanner.stop().then(() => scanner.clear());
+        scannerInstance.stop().then(() => scannerInstance.clear());
         scannerDiv.innerHTML = "";
         document.getElementById("result").innerText = "";
       },
@@ -73,16 +73,18 @@ async function startScan(target) {
     ).catch(err => {
       document.getElementById("result").innerText = "Gagal akses kamera: " + err;
     });
-  }, 700); // delay 700ms untuk stabilitas
+  }, 700);
 }
 
-    function stopScan() {
-      scanner.stop().then(() => {
-        document.getElementById("scanner").innerHTML = "";
-      }).catch(err => {
-        console.warn("Gagal stop scanner:", err);
-      });
-    }
+function stopScan() {
+  if (scannerInstance) {
+    scannerInstance.stop().then(() => {
+      document.getElementById("scanner").innerHTML = "";
+    }).catch(err => {
+      console.warn("Gagal stop scanner:", err);
+    });
+  }
+}
 
     function submitForm() {
       const assy = document.getElementById("assyBarcode").value;
@@ -120,4 +122,5 @@ async function startScan(target) {
   </script>
 </body>
 </html>
+
 
