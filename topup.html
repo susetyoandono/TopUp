@@ -6,7 +6,7 @@
   <style>
     body { font-family: sans-serif; padding: 20px; }
     input, button { margin: 5px 0; width: 100%; padding: 8px; }
-    #result { font-weight: bold; margin-top: 10px; }
+    #result { font-weight: bold; margin-top: 10px; color: #333; }
     #scanner { width: 300px; margin-top: 10px; }
   </style>
 </head>
@@ -34,45 +34,43 @@
     let currentTarget = "";
     const scanner = new Html5Qrcode("scanner");
 
-async function startScan(target) {
-  currentTarget = target;
+    async function startScan(target) {
+      currentTarget = target;
+      document.getElementById("scanner").innerHTML = "";
 
-  // Bersihkan scanner container
-  document.getElementById("scanner").innerHTML = "";
+      try {
+        if (scanner._isScanning) {
+          await scanner.stop();
+          await scanner.clear();
+        }
+      } catch (err) {
+        console.warn("Stop/clear error:", err);
+      }
 
-  // Stop dan clear scanner jika sedang aktif
-  try {
-    if (scanner._isScanning) {
-      await scanner.stop();
-      await scanner.clear(); // <--- ini kunci pentingnya
+      setTimeout(() => {
+        scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          qrCodeMessage => {
+            const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
+            console.log("QR code terbaca:", cleanMessage);
+            document.getElementById(target + "Barcode").value = cleanMessage;
+
+            scanner.stop().then(() => scanner.clear());
+            document.getElementById("scanner").innerHTML = "";
+            document.getElementById("result").innerText = "";
+          },
+          errorMessage => {
+            const input = document.getElementById(target + "Barcode");
+            if (!input.value) {
+              document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+            }
+          }
+        ).catch(err => {
+          document.getElementById("result").innerText = "Gagal akses kamera: " + err;
+        });
+      }, 500); // delay sedikit lebih lama untuk stabilitas
     }
-  } catch (err) {
-    console.warn("Stop/clear error (bisa diabaikan):", err);
-  }
-
-  // Delay 300ms sebelum start ulang
-  setTimeout(() => {
-    scanner.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: 250 },
-  qrCodeMessage => {
-    document.getElementById(target + "Barcode").value = qrCodeMessage;
-    scanner.stop().then(() => scanner.clear());
-    document.getElementById("scanner").innerHTML = "";
-    document.getElementById("result").innerText = ""; // Bersihkan error lama
-  },
-  errorMessage => {
-    console.warn("Scan error:", errorMessage);
-    // Jangan tampilkan error kalau data sudah masuk
-    if (!document.getElementById(target + "Barcode").value) {
-      document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
-    }
-  }
-).catch(err => {
-      document.getElementById("result").innerText = "Gagal akses kamera: " + err;
-    });
-  }, 300);
-}
 
     function stopScan() {
       scanner.stop().then(() => {
@@ -87,25 +85,34 @@ async function startScan(target) {
       const topup = document.getElementById("topupBarcode").value;
       const qty = document.getElementById("qty").value;
 
-      let judgement = (assy.split(",")[1] === topup.split(",")[1]) &&
-                      (assy.split(",")[19] === topup.split(",")[19]) ? "OK" : "NG";
+      try {
+        const assyParts = assy.split(",");
+        const topupParts = topup.split(",");
 
-      fetch("https://script.google.com/macros/s/AKfycbw4LTv9X2h82R6zMgmovD86CtZK2BlEvIropbqSgf0otjd3XRyeTs7xiAhp7mUu5JJd/exec", {
-        method: "POST",
-        body: JSON.stringify({ assy, topup, qty, judgement }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.text())
-      .then(msg => {
-        document.getElementById("result").innerText = "Judgement: " + judgement;
-      })
-      .catch(err => {
-        document.getElementById("result").innerText = "Gagal submit: " + err;
-      });
+        if (assyParts.length < 20 || topupParts.length < 20) {
+          throw new Error("Format QR code tidak valid");
+        }
+
+        const judgement = (assyParts[1] === topupParts[1]) &&
+                          (assyParts[19] === topupParts[19]) ? "OK" : "NG";
+
+        fetch("https://script.google.com/macros/s/AKfycbw4LTv9X2h82R6zMgmovD86CtZK2BlEvIropbqSgf0otjd3XRyeTs7xiAhp7mUu5JJd/exec", {
+          method: "POST",
+          body: JSON.stringify({ assy, topup, qty, judgement }),
+          headers: { "Content-Type": "application/json" }
+        })
+        .then(res => res.text())
+        .then(msg => {
+          document.getElementById("result").innerText = "Judgement: " + judgement;
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Gagal submit: " + err;
+        });
+
+      } catch (err) {
+        document.getElementById("result").innerText = "Gagal submit: " + err.message;
+      }
     }
   </script>
 </body>
 </html>
-
-
-
