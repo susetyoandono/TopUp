@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Top Up Form (Offline)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+    }
+    input, button {
+      margin: 5px 0;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #scanner {
+      width: 100%;
+      margin-top: 10px;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 48px;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    #waitMessage {
+      text-align: center;
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+    }
+    #continueBtn, #downloadBtn {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #scanSection {
+      display: none;
+    }
+    #logList {
+      margin-top: 20px;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+    }
+    #logEntries {
+      list-style: none;
+      padding-left: 0;
+    }
+    #logEntries li {
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #aaa;
+      padding-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Front Page -->
+  <div id="frontPage">
+    <h2>Masukkan Operator ID</h2>
+    <input type="text" id="operatorId" placeholder="Enter your ID">
+    <button id="continueBtnMain">→ Continue</button>
+  </div>
+
+  <!-- Scan Section -->
+  <div id="scanSection">
+    <h2>TOP UP SCAN FORM</h2>
+
+    <label>Scan Assy Barcode:</label>
+    <input type="text" id="assyBarcode" readonly>
+    <button onclick="startScan('assy')">Scan Assy</button>
+
+    <label>Scan Top Up Barcode:</label>
+    <input type="text" id="topupBarcode" readonly>
+    <button onclick="startScan('topup')">Scan Top Up</button>
+
+    <label>Top Up Qty:</label>
+    <input type="number" id="qty">
+
+    <button onclick="submitForm()">Submit</button>
+    <button onclick="stopScan()">Stop Scan</button>
+
+    <div id="waitMessage"></div>
+    <div id="result"></div>
+    <button id="continueBtn" onclick="resetForm()">Continue</button>
+    <button id="downloadBtn" onclick="downloadCSV()">Download CSV Log</button>
+
+    <div id="scanner"></div>
+
+    <div id="logList">
+      <strong>Log Preview:</strong>
+      <ul id="logEntries"></ul>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    let currentTarget = "";
+    let scannerInstance = null;
+    let operatorIdGlobal = "";
+
+    document.getElementById("continueBtnMain").addEventListener("click", () => {
+      const id = document.getElementById("operatorId").value.trim();
+      if (!id) {
+        alert("Masukkan Operator ID terlebih dahulu.");
+        return;
+      }
+      operatorIdGlobal = id;
+      document.getElementById("frontPage").style.display = "none";
+      document.getElementById("scanSection").style.display = "block";
+    });
+
+    async function startScan(target) {
+      currentTarget = target;
+      const scannerDiv = document.getElementById("scanner");
+      scannerDiv.innerHTML = "";
+
+      if (scannerInstance) {
+        try {
+          await scannerInstance.stop();
+          await scannerInstance.clear();
+        } catch (err) {
+          console.warn("Stop/clear error:", err);
+        }
+      }
+
+      scannerInstance = new Html5Qrcode("scanner");
+
+      setTimeout(() => {
+        scannerInstance.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          qrCodeMessage => {
+            const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
+            document.getElementById(target + "Barcode").value = cleanMessage;
+
+            scannerInstance.stop().then(() => scannerInstance.clear());
+            scannerDiv.innerHTML = "";
+            document.getElementById("result").innerText = "";
+          },
+          errorMessage => {
+            const input = document.getElementById(target + "Barcode");
+            if (!input.value) {
+              document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
+            }
+          }
+        ).catch(err => {
+          document.getElementById("result").innerText = "Gagal akses kamera: " + err;
+        });
+      }, 700);
+    }
+
+    function stopScan() {
+      if (scannerInstance) {
+        scannerInstance.stop().then(() => {
+          document.getElementById("scanner").innerHTML = "";
+        }).catch(err => {
+          console.warn("Gagal stop scanner:", err);
+        });
+      }
+    }
+
+    function submitForm() {
+      const assy = document.getElementById("assyBarcode").value;
+      const topup = document.getElementById("topupBarcode").value;
+      const qty = document.getElementById("qty").value;
+
+      document.getElementById("waitMessage").innerText = "Please wait .. system is processing the data";
+      document.getElementById("result").innerText = "";
+      document.getElementById("continueBtn").style.display = "none";
+
+      try {
+        const assyParts = assy.split(",");
+        const topupParts = topup.split(",");
+
+        if (assyParts.length < 20 || topupParts.length < 20) {
+          throw new Error("Format QR code tidak valid");
+        }
+
+        const judgement = (assyParts[1] === topupParts[1]) &&
+                          (assyParts[19] === topupParts[19]) ? "OK" : "NG";
+
+        const timestamp = new Date().toLocaleString();
+        const newRow = [
+          timestamp,
+          assyParts[0], assyParts[2], assyParts[19],
+          topupParts[0], topupParts[2], topupParts[19],
+          qty, judgement, operatorIdGlobal
+        ];
+
+        let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
+        logData.push(newRow);
+        localStorage.setItem("topupLog", JSON.stringify(logData));
+
+        showJudgement(judgement);
+        document.getElementById("downloadBtn").style.display = "inline-block";
+        appendLogEntry(newRow);
+
+      } catch (err) {
+        document.getElementById("waitMessage").innerText = "";
+        document.getElementById("result").innerText = "Gagal submit: " + err.message;
+      }
+    }
+
+    function showJudgement(judgement) {
+      document.getElementById("waitMessage").innerText = "";
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerText = judgement;
+      resultDiv.style.backgroundColor = judgement === "OK" ? "#4CAF50" : "#F44336";
+      resultDiv.style.color = judgement === "OK" ? "#000" : "#FFF";
+      document.getElementById("continueBtn").style.display = "inline-block";
+    }
+
+    function resetForm() {
+      document.getElementById("assyBarcode").value = "";
+      document.getElementById("topupBarcode").value = "";
+      document.getElementById("qty").value = "";
+      document.getElementById("result").innerText = "";
+      document.getElementById("result").style.backgroundColor = "";
+      document.getElementById("waitMessage").innerText = "";
+      document.getElementById("continueBtn").style.display = "none";
+    }
+
+    function appendLogEntry(row) {
+      const entryHTML = `
+        <li>
+          <div><strong>${row[0]}</strong></div>
+          <div>Assy: ${row[1]} - ${row[2]} | Batch: ${row[3]}</div>
+          <div>Top Up: ${row[4]} - ${row[5]} | Batch: ${row[6]}</div>
+          <div>Qty: ${row[7]}          <div>Qty: ${row[7]} | Judgement: ${row[8]} | Operator: ${row[9]}</div>
+        </li>
+      `;
+      document.getElementById("logEntries").insertAdjacentHTML("afterbegin", entryHTML);
+    }
+
+    function downloadCSV() {
+      let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
+      let csv = "Timestamp,Assy Part Number,Assy Part Name,Assy Batch Number,Top Up Part Number,Top Up Part Name,Top Up Batch Number,Qty,Judgement,Operator ID\n";
+      logData.forEach(row => {
+        csv += row.map(item => `"${item}"`).join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "topup_log.csv";
+      link.click();
+    }
+  </script>
+</body>
+</html>
