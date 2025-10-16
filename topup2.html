@@ -91,6 +91,14 @@
     <label>Top Up Qty:</label>
     <input type="number" id="qty">
 
+    <label>Alasan Top Up:</label>
+    <div>
+      <input type="radio" id="reject" name="reason" value="Reject" checked>
+      <label for="reject">Top Up due to Reject</label><br>
+      <input type="radio" id="lessQty" name="reason" value="Less Qty">
+      <label for="lessQty">Top Up due to Less Qty</label>
+    </div>
+
     <button onclick="submitForm()">Submit</button>
     <button onclick="stopScan()">Stop Scan</button>
 
@@ -171,6 +179,7 @@
       const assy = document.getElementById("assyBarcode").value;
       const topup = document.getElementById("topupBarcode").value;
       const qty = document.getElementById("qty").value;
+      const reason = document.querySelector('input[name="reason"]:checked').value;
 
       document.getElementById("waitMessage").innerText = "Please wait .. system is processing the data";
       document.getElementById("result").innerText = "";
@@ -188,12 +197,15 @@
                           (assyParts[19] === topupParts[19]) ? "OK" : "NG";
 
         const timestamp = new Date().toLocaleString();
-        const newRow = [
-          timestamp,
-          assyParts[1], assyParts[19], assyParts[2],
-          topupParts[1], topupParts[19], topupParts[2],
-          qty, judgement, operatorIdGlobal
-        ];
+      
+      const newRow = [
+        timestamp,
+        assyParts[1], assyParts[19], assyParts[2],
+        topupParts[1], topupParts[19], topupParts[2],
+        qty, reason, judgement, operatorIdGlobal
+      ];
+
+
 
         let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
         logData.push(newRow);
@@ -242,7 +254,7 @@
 
     function downloadCSV() {
       let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
-      let csv = "Timestamp,Assy Part Number,Assy Part Name,Assy Batch Number,Top Up Part Number,Top Up Part Name,Top Up Batch Number,Qty,Judgement,Operator ID\n";
+      let csv = "Timestamp,Assy Part Number,Assy Part Name,Assy Batch Number,Top Up Part Number,Top Up Part Name,Top Up Batch Number,Qty,Reason,Judgement,Operator ID\n";
       logData.forEach(row => {
         csv += row.map(item => `"${item}"`).join(",") + "\n";
       });
@@ -256,6 +268,7 @@
   </script>
 </body>
 </html>
+
 
 
 
