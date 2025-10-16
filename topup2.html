@@ -15,6 +15,9 @@
       padding: 10px;
       font-size: 16px;
     }
+    input[type="radio"] {
+      width: auto;
+    }
     #scanner {
       width: 100%;
       margin-top: 10px;
@@ -93,11 +96,11 @@
 
     <label>TOP UP REASON:</label>
     <div style="margin: 5px 0;">
-      <label style="display: flex;">
+      <label style="display: flex; align-items: center; gap: 8px;">
         <input type="radio" name="reason" value="Due to Reject" checked>
         Due to Reject
       </label>
-      <label style="display: flex;">
+      <label style="display: flex; align-items: center; gap: 8px;">
         <input type="radio" name="reason" value="Due to Less Qty">
         Due to Less Qty
       </label>
@@ -272,6 +275,7 @@
   </script>
 </body>
 </html>
+
 
 
 
