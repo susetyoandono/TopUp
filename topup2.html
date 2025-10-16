@@ -78,6 +78,8 @@
   <div id="scanSection">
     <h2>TOP UP SCAN FORM</h2>
 
+    <div id="scanner"></div>
+
     <label>Scan Assy Barcode:</label>
     <input type="text" id="assyBarcode" readonly>
     <button onclick="startScan('assy')">Scan Assy</button>
@@ -96,8 +98,6 @@
     <div id="result"></div>
     <button id="continueBtn" onclick="resetForm()">Continue</button>
     <button id="downloadBtn" onclick="downloadCSV()">Download CSV Log</button>
-
-    <div id="scanner"></div>
 
     <div id="logList">
       <strong>Log Preview:</strong>
@@ -159,7 +159,7 @@
         ).catch(err => {
           document.getElementById("result").innerText = "Gagal akses kamera: " + err;
         });
-      }, 700);
+      }, 5000);
     }
 
     function stopScan() {
@@ -261,3 +261,4 @@
   </script>
 </body>
 </html>
+
