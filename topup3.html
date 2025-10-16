@@ -127,7 +127,7 @@
 
 <div id="addBatchPage" style="display: none;">
   <h2>ADD TOP UP BATCH</h2>
-  <div id="scanner"></div>
+  <div id="scannerAddBatch" style="margin-top: 10px;"></div>
   
   <label>Scan Top Up Barcode:</label>
   <input type="text" id="newTopupBarcode" readonly>
@@ -161,39 +161,39 @@
     });
 
     async function startScan(target) {
-      currentTarget = target;
-      const scannerDiv = document.getElementById("scanner");
-      scannerDiv.innerHTML = "";
+  currentTarget = target;
 
-      if (scannerInstance) {
-        try {
-          await scannerInstance.stop();
-          await scannerInstance.clear();
-        } catch (err) {
-          console.warn("Stop/clear error:", err);
-        }
-      }
+  // Tentukan div scanner yang dipakai
+  const scannerDivId = target === "newTopup" ? "scannerAddBatch" : "scanner";
+  const scannerDiv = document.getElementById(scannerDivId);
+  scannerDiv.innerHTML = "";
 
-      scannerInstance = new Html5Qrcode("scanner");
-
-      setTimeout(() => {
-        scannerInstance.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
-            document.getElementById(target + "Barcode").value = cleanMessage;
-
-            scannerInstance.stop().then(() => scannerInstance.clear());
-            scannerDiv.innerHTML = "";
-            document.getElementById("result").innerText = "";
-          },
-
-        ).catch(err => {
-          document.getElementById("result").innerText = "Gagal akses kamera: " + err;
-        });
-      }, 5000);
+  // Stop scanner sebelumnya
+  if (scannerInstance) {
+    try {
+      await scannerInstance.stop();
+      await scannerInstance.clear();
+    } catch (err) {
+      console.warn("Stop/clear error:", err);
     }
+  }
+
+  scannerInstance = new Html5Qrcode(scannerDivId);
+
+  scannerInstance.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    qrCodeMessage => {
+      const cleanMessage = qrCodeMessage.replace(/[^\x20-\x7E]/g, '').trim();
+      document.getElementById(target + "Barcode").value = cleanMessage;
+
+      scannerInstance.stop().then(() => scannerInstance.clear());
+      scannerDiv.innerHTML = "";
+    }
+  ).catch(err => {
+    console.warn("Gagal akses kamera:", err);
+  });
+}
 
     function stopScan() {
       if (scannerInstance) {
@@ -382,6 +382,7 @@ function saveTopupBatch() {
   </script>
 </body>
 </html>
+
 
 
 
