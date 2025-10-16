@@ -150,12 +150,7 @@
             scannerDiv.innerHTML = "";
             document.getElementById("result").innerText = "";
           },
-          errorMessage => {
-            const input = document.getElementById(target + "Barcode");
-            if (!input.value) {
-              document.getElementById("result").innerText = "Gagal scan: " + errorMessage;
-            }
-          }
+
         ).catch(err => {
           document.getElementById("result").innerText = "Gagal akses kamera: " + err;
         });
@@ -261,4 +256,5 @@
   </script>
 </body>
 </html>
+
 
