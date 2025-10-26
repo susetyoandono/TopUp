@@ -251,8 +251,8 @@ function submitForm() {
     batchData.usedQty += topupQty;
     localStorage.setItem("topupBatchList", JSON.stringify(batchList));
 
-    const reelAssy = assyParts[16];
-    const reelTopup = topupParts[16];
+    const reelAssy = assyParts[18];
+    const reelTopup = topupParts[18];
 
     const newRow = [
       timestamp,
@@ -337,7 +337,7 @@ function saveTopupBatch() {
   }
 
   const partNumber = parts[1];
-  const batchNumber = parts[19];
+  const batchNumber = parts[2];
 
   let batchList = JSON.parse(localStorage.getItem("topupBatchList") || "[]");
 
@@ -371,7 +371,7 @@ function saveTopupBatch() {
 
 function downloadCSV() {
   let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
-  let csv = "Timestamp,Assy Part Number,Assy Batch Number,Assy Part Name,Assy Reel,Top Up Part Number,Top Up Batch Number,Top Up Part Name,Top Up Reel,Qty,Reason,Judgement,Operator ID,Balance After Top Up\n";
+  let csv = "Timestamp,Assy Part Number,Assy Part Name,Assy Batch Number,Assy Reel,Top Up Part Number,Top Up Part Name,Top Up Batch Number,Top Up Reel,Qty,Reason,Judgement,Operator ID,Balance After Top Up\n";
   logData.forEach(row => {
     csv += row.map(item => `"${item}"`).join(",") + "\n";
   });
@@ -385,6 +385,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
