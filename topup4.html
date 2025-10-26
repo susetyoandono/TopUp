@@ -231,7 +231,7 @@ function submitForm() {
     // Ambil saldo batch
     let batchList = JSON.parse(localStorage.getItem("topupBatchList") || "[]");
     const topupPart = topupParts[1];
-    const topupBatch = topupParts[19];
+    const topupBatch = topupParts[2];
     const topupQty = parseInt(qty);
 
     const batchData = batchList.find(b =>
@@ -385,6 +385,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
