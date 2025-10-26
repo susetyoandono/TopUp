@@ -205,81 +205,76 @@
       }
     }
 
-    function submitForm() {
-      const assy = document.getElementById("assyBarcode").value;
-      const topup = document.getElementById("topupBarcode").value;
-      const qty = document.getElementById("qty").value;
-      const reason = document.querySelector('input[name="reason"]:checked').value;
-      const reelAssy = assyParts[16];
-      const reelTopup = topupParts[16];
-      const balance = batchData.initialQty - batchData.usedQty;
+function submitForm() {
+  const assy = document.getElementById("assyBarcode").value;
+  const topup = document.getElementById("topupBarcode").value;
+  const qty = document.getElementById("qty").value;
+  const reason = document.querySelector('input[name="reason"]:checked').value;
 
+  document.getElementById("waitMessage").innerText = "Please wait .. system is processing the data";
+  document.getElementById("result").innerText = "";
+  document.getElementById("continueBtn").style.display = "none";
 
+  try {
+    const assyParts = assy.split(",");
+    const topupParts = topup.split(",");
 
-      document.getElementById("waitMessage").innerText = "Please wait .. system is processing the data";
-      document.getElementById("result").innerText = "";
-      document.getElementById("continueBtn").style.display = "none";
+    if (assyParts.length < 20 || topupParts.length < 20) {
+      throw new Error("Format QR code tidak valid");
+    }
 
-      try {
-        const assyParts = assy.split(",");
-        const topupParts = topup.split(",");
+    const judgement = (assyParts[1] === topupParts[1]) &&
+                      (assyParts[19] === topupParts[19]) ? "OK" : "NG";
 
-        if (assyParts.length < 20 || topupParts.length < 20) {
-          throw new Error("Format QR code tidak valid");
-        }
+    const timestamp = new Date().toLocaleString();
 
-        const judgement = (assyParts[1] === topupParts[1]) &&
-                          (assyParts[19] === topupParts[19]) ? "OK" : "NG";
+    // Ambil saldo batch
+    let batchList = JSON.parse(localStorage.getItem("topupBatchList") || "[]");
+    const topupPart = topupParts[1];
+    const topupBatch = topupParts[19];
+    const topupQty = parseInt(qty);
 
-        const timestamp = new Date().toLocaleString();
+    const batchData = batchList.find(b =>
+      b.partNumber === topupPart && b.batchNumber === topupBatch
+    );
 
-// Ambil saldo batch
-let batchList = JSON.parse(localStorage.getItem("topupBatchList") || "[]");
-const topupPart = topupParts[1];
-const topupBatch = topupParts[19];
-const topupQty = parseInt(qty);
+    if (!batchData) {
+      throw new Error("Batch belum terdaftar. Tambahkan dulu di 'Add Top Up Batch'.");
+    }
 
-const batchData = batchList.find(b =>
-  b.partNumber === topupPart && b.batchNumber === topupBatch
-);
+    const balance = batchData.initialQty - batchData.usedQty;
+    if (topupQty > balance) {
+      throw new Error(`Balance tidak cukup, tersisa tinggal ${balance}`);
+    }
 
-if (!batchData) {
-  throw new Error("Batch belum terdaftar. Tambahkan dulu di 'Add Top Up Batch'.");
-}
+    // Update usedQty
+    batchData.usedQty += topupQty;
+    localStorage.setItem("topupBatchList", JSON.stringify(batchList));
 
-const balance = batchData.initialQty - batchData.usedQty;
-if (topupQty > balance) {
-  throw new Error(`Balance tidak cukup, tersisa tinggal ${balance}`);
-}
+    const reelAssy = assyParts[16];
+    const reelTopup = topupParts[16];
 
-// Update usedQty
-batchData.usedQty += topupQty;
-localStorage.setItem("topupBatchList", JSON.stringify(batchList));
-      
-      const newRow = [
+    const newRow = [
       timestamp,
       assyParts[1], assyParts[19], assyParts[2], reelAssy,
       topupParts[1], topupParts[19], topupParts[2], reelTopup,
-      qty, reason, judgement, operatorIdGlobal, balance
-      ];
+      qty, reason, judgement, operatorIdGlobal,
+      batchData.initialQty - batchData.usedQty
+    ];
 
+    let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
+    logData.push(newRow);
+    localStorage.setItem("topupLog", JSON.stringify(logData));
 
+    showJudgement(judgement);
+    document.getElementById("downloadBtn").style.display = "inline-block";
+    appendLogEntry(newRow);
 
-
-
-        let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
-        logData.push(newRow);
-        localStorage.setItem("topupLog", JSON.stringify(logData));
-
-        showJudgement(judgement);
-        document.getElementById("downloadBtn").style.display = "inline-block";
-        appendLogEntry(newRow);
-
-      } catch (err) {
-        document.getElementById("waitMessage").innerText = "";
-        document.getElementById("result").innerText = "Gagal submit: " + err.message;
-      }
-    }
+  } catch (err) {
+    document.getElementById("waitMessage").innerText = "";
+    document.getElementById("result").innerText = "Gagal submit: " + err.message;
+  }
+}
 
     function showJudgement(judgement) {
       document.getElementById("waitMessage").innerText = "";
@@ -300,18 +295,18 @@ localStorage.setItem("topupBatchList", JSON.stringify(batchList));
       document.getElementById("continueBtn").style.display = "none";
     }
 
-    function appendLogEntry(row) {
-      const entryHTML = `
-        <li>
-          <div><strong>${row[0]}</strong></div>
-          <div>Assy: ${row[1]} - ${row[2]} | Batch: ${row[3]} | Reel: ${row[4]}</div>
-          <div>Top Up: ${row[5]} - ${row[6]} | Batch: ${row[7]} | Reel: ${row[8]}</div>
-          <div>Qty: ${row[9]} | Reason: ${row[10]} | Judgement: ${row[11]} | Operator: ${row[12]}</div>
-          <div>Balance After Top Up: ${row[13]}</div>
-        </li>
-  `   ;
-      document.getElementById("logEntries").insertAdjacentHTML("afterbegin", entryHTML);
-    }
+function appendLogEntry(row) {
+  const entryHTML = `
+    <li>
+      <div><strong>${row[0]}</strong></div>
+      <div>Assy: ${row[1]} - ${row[2]} | Batch: ${row[3]} | Reel: ${row[4]}</div>
+      <div>Top Up: ${row[5]} - ${row[6]} | Batch: ${row[7]} | Reel: ${row[8]}</div>
+      <div>Qty: ${row[9]} | Reason: ${row[10]} | Judgement: ${row[11]} | Operator: ${row[12]}</div>
+      <div>Balance After Top Up: ${row[13]}</div>
+    </li>
+  `;
+  document.getElementById("logEntries").insertAdjacentHTML("afterbegin", entryHTML);
+}
 
 function goToAddBatch() {
   document.getElementById("scanSection").style.display = "none";
@@ -374,22 +369,23 @@ function saveTopupBatch() {
 }
 
 
-    function downloadCSV() {
-      let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
-      let csv = "Timestamp,Assy Part Number,Assy Batch Number,Assy Part Name,Assy Reel,Top Up Part Number,Top Up Batch Number,Top Up Part Name,Top Up Reel,Qty,Reason,Judgement,Operator ID,Balance After Top Up\n";
-      logData.forEach(row => {
-        csv += row.map(item => `"${item}"`).join(",") + "\n";
-      });
+function downloadCSV() {
+  let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
+  let csv = "Timestamp,Assy Part Number,Assy Batch Number,Assy Part Name,Assy Reel,Top Up Part Number,Top Up Batch Number,Top Up Part Name,Top Up Reel,Qty,Reason,Judgement,Operator ID,Balance After Top Up\n";
+  logData.forEach(row => {
+    csv += row.map(item => `"${item}"`).join(",") + "\n";
+  });
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "topup_log.csv";
-      link.click();
-    }
+  const blob = new Blob([csv], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "topup_log.csv";
+  link.click();
+}
   </script>
 </body>
 </html>
+
 
 
 
