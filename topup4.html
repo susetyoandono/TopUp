@@ -75,8 +75,8 @@
 <body>
   <!-- Front Page -->
   <div id="frontPage">
+    <div style="font-size: 12px; color: #888; margin-bottom: 10px;">ver 4.2</div>
     <h2>Masukkan Operator ID</h2>
-    <div style="font-size: 12px; color: #888; margin-bottom: 10px;">ver 4.1</div>
     <input type="text" id="operatorId" placeholder="Enter your ID">
     <button id="continueBtnMain">→ Continue</button>
   </div>
@@ -258,9 +258,7 @@ function submitForm() {
 
     const reelAssy = assyParts[18];
     const reelTopup = topupParts[18];
-    const balanceAfter = judgement === "OK"
-      ? batchData.initialQty - batchData.usedQty
-      : batchData.initialQty;
+    const balanceAfter = batchData.initialQty - batchData.usedQty;
 
 
     const newRow = [
@@ -394,6 +392,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
