@@ -248,18 +248,26 @@ function submitForm() {
     }
 
     // Update usedQty
-    batchData.usedQty += topupQty;
-    localStorage.setItem("topupBatchList", JSON.stringify(batchList));
+    if (judgement === "OK") {
+      batchData.usedQty += topupQty;
+      localStorage.setItem("topupBatchList", JSON.stringify(batchList));
+    }
+
+
 
     const reelAssy = assyParts[18];
     const reelTopup = topupParts[18];
+    const balanceAfter = judgement === "OK"
+      ? batchData.initialQty - batchData.usedQty
+      : batchData.initialQty;
+
 
     const newRow = [
       timestamp,
       assyParts[1], assyParts[19], assyParts[2], reelAssy,
       topupParts[1], topupParts[19], topupParts[2], reelTopup,
       qty, reason, judgement, operatorIdGlobal,
-      batchData.initialQty - batchData.usedQty
+      balanceAfter
     ];
 
     let logData = JSON.parse(localStorage.getItem("topupLog") || "[]");
@@ -385,6 +393,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
