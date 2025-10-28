@@ -75,7 +75,7 @@
 <body>
   <!-- Front Page -->
   <div id="frontPage">
-    <div style="font-size: 12px; color: #888; margin-bottom: 10px;">ver 4.2</div>
+    <div style="font-size: 12px; color: #888; margin-bottom: 10px;">ver 4.3</div>
     <h2>Masukkan Operator ID</h2>
     <input type="text" id="operatorId" placeholder="Enter your ID">
     <button id="continueBtnMain">→ Continue</button>
@@ -276,6 +276,9 @@ function submitForm() {
     showJudgement(judgement);
     document.getElementById("downloadBtn").style.display = "inline-block";
     appendLogEntry(newRow);
+    document.getElementById("assyBarcode").value = "";
+    document.getElementById("topupBarcode").value = "";
+    document.getElementById("qty").value = "";
 
   } catch (err) {
     document.getElementById("waitMessage").innerText = "";
@@ -314,9 +317,7 @@ function appendLogEntry(row) {
   `;
   document.getElementById("logEntries").insertAdjacentHTML("afterbegin", entryHTML);
 }
-document.getElementById("assyBarcode").value = "";
-document.getElementById("topupBarcode").value = "";
-document.getElementById("qty").value = "";
+
     
 function goToAddBatch() {
   document.getElementById("scanSection").style.display = "none";
@@ -395,6 +396,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
