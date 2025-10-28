@@ -314,7 +314,10 @@ function appendLogEntry(row) {
   `;
   document.getElementById("logEntries").insertAdjacentHTML("afterbegin", entryHTML);
 }
-
+document.getElementById("assyBarcode").value = "";
+document.getElementById("topupBarcode").value = "";
+document.getElementById("qty").value = "";
+    
 function goToAddBatch() {
   document.getElementById("scanSection").style.display = "none";
   document.getElementById("addBatchPage").style.display = "block";
@@ -392,6 +395,7 @@ function downloadCSV() {
   </script>
 </body>
 </html>
+
 
 
 
